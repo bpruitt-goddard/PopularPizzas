@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using ServiceStack.Text;
 
 namespace PopularPizzas
@@ -9,19 +10,25 @@ namespace PopularPizzas
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Hello World");
-            var pizzas = Test();
-            Console.WriteLine("{0} pizzas", pizzas.Count());
-            // Console.WriteLine("First Pizza {0}", pizzas.First().Toppings.Count());
-            Console.Read();
+            var pizzas = ParseFile();
             
+            //Group by toppings and get top 20
+            var topPizzas = pizzas.GroupBy(s => s, new PizzaComparer())
+                    .OrderByDescending(s => s.Count())
+                    .Take(20)
+                    .Select(g => new { Toppings = g.First().Toppings, Count = g.Count()}).ToList();
+                        
+            for (int i = 0; i < topPizzas.Count; i++)
+            {
+                Console.WriteLine("{0}/20 best pizza: {1}", i+1, topPizzas[i].Dump());
+            }
+            Console.Read();
         }
         
-        public static List<Pizza> Test()
+        public static List<Pizza> ParseFile()
         {
-            var json = "[  {    \"toppings\": [      \"pepperoni\"    ]  },  {    \"toppings\": [      \"feta cheese\"    ]  },  {    \"toppings\": [      \"pepperoni\"    ]  }";        
-            var pizzas = JsonSerializer.DeserializeFromString<List<Pizza>>(json);
-            return pizzas;
+            var text = File.ReadAllText("pizzaData.json");
+            return JsonSerializer.DeserializeFromString<List<Pizza>>(text);
         }
     }
 }
